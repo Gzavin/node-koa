@@ -1,0 +1,68 @@
+server {
+    charset utf-8;
+    index index.html index.php;
+    open_file_cache_valid 30s;
+    open_file_cache_min_uses 1;
+    listen  80;
+    server_name  <%serverName%>.fedev.haizhi.com;
+    client_header_buffer_size 4096;
+    open_file_cache max=102400 inactive=20s;
+    root <%feBranch%>;
+
+    #location ~ \.html$ {
+    #    try_files "/$locale$uri" $uri =404;
+    #}
+
+    # 知识图谱的后端是admin_api开头，BDP的后端是api开头
+    location ~ ^/(graph|api|mob|admin_api)/ {
+        proxy_pass http://<%apiProxy.host%>:<%apiProxy.port%>;
+        proxy_set_header Host <%apiProxy.host%>:<%apiProxy.port%>;
+        proxy_set_header  X-Real-IP  $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+    location ^~ /api/ucenter/ {
+       proxy_pass http://<%apiProxy.host%>:<%apiProxy.port%>/api/;
+       proxy_set_header Host <%apiProxy.host%>:<%apiProxy.port%>;
+       proxy_set_header  X-Real-IP  $remote_addr;
+       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location ^~ /api/chat/ {
+        proxy_pass http://<%apiChatProxy.host%>:<%apiChatProxy.port%>;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+    }
+
+    location ^~ /api/client/ {
+        proxy_pass http://<%apiChatProxy.host%>:<%apiChatProxy.port%>;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+    }    
+
+    location ~ .*\.(php|php5)?$ {
+        fastcgi_pass  127.0.0.1:9000;
+        fastcgi_index index.php;
+        include        fastcgi_params;
+        fastcgi_param  SCRIPT_FILENAME    $document_root$fastcgi_script_name;
+        fastcgi_intercept_errors on;
+    }
+
+    location ~ .*\.(html|htm)$ {
+        add_header Cache-Control 'no-cache, no-store, must-revalidate';
+    }
+
+    location ~ .*\.(gif|jpg|jpeg|png|bmp|swf)$ {
+        expires      30d;
+    }
+
+    location ~ .*\.(js|css)?$ {
+        expires      12h;
+    }
+
+    error_page  404             /404.html;
+    location = /404.html {
+        root   /home/hzfe/dev-server/spare-html/;
+    }
+}
