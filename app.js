@@ -6,10 +6,16 @@ const onerror = require('koa-onerror')
 const bodyparser = require('koa-bodyparser')
 const logger = require('koa-logger')
 
+const config  = require('config')
+
 const index = require('./routes/index')
 const users = require('./routes/users')
 
 // error handler
+
+require("babel-register");
+require("babel-polyfill");
+
 onerror(app)
 
 // middlewares
